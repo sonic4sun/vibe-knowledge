@@ -1,12 +1,12 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 # 出片后交付：桌面 1080p60 分享版（CRF 23）+ 课程页 720p30 网页版（降噪后约 2 MB/分钟）+ 封面
 # 用法：cine/tools/deliver.sh <课号> "<标题>" <封面秒数>
 # 去向写在 cine/deliver.env（new_series.py 生成）：D=桌面文件夹；WEB=课程页发布目录；STRIP=文件名里去掉的课号前缀（如 p）
 set -e
-cd "${0:A:h}/../.."
+cd "$(dirname "$0")/../.."
 N=$1; TITLE=$2; POSTER=${3:-12}
 SRC=lessons/$N/build/lesson$N.mp4
-D="$HOME/Desktop/${PWD:t}_视频"; WEB=publish/course; STRIP=""
+D="$HOME/Desktop/$(basename "$PWD")_视频"; WEB=publish/course; STRIP=""
 [[ -f cine/deliver.env ]] && source cine/deliver.env
 NAME=$N; [[ -n "$STRIP" ]] && NAME=${N#$STRIP}
 mkdir -p "$D" $WEB

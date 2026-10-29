@@ -64,6 +64,8 @@ S=~/Desktop/vibe-knowledge/examples/vk; L=$S/lessons/<期号>
 
 依赖：ai-teardown skill（cine 引擎、make_lesson 配音）、`CINE_PY`（numpy scipy pillow playwright 的 Python；本机是 `/usr/local/bin/python3.12`，跑之前 `PYTHONPATH=` 清空，否则会加载坏掉的 PIL）、聲音實驗室設定 `~/.config/ai-teardown/voicelab.env`（只有改回 MiMo 才需要 `mimo.env`）、Renoise MCP（只有增强档需要；缺的话按 references/04-renoise.md「接入 Renoise」一节引导，注册链接原样给 https://renoise.ai/mcp?utm_medium=xcom&utm_source=official ）、ffmpeg、swiftc（OCR）。
 
+**Windows（用戶的電腦）**：指令在 Git Bash 裡跑。`python3` 是 `~/.venvs/cine` 的 Python（numpy scipy pillow playwright opencc 都裝好了），`CINE_PY` 指向同一個；whisper-cli 和模型在 `~/code/vk-tools`，路徑已寫進 `WHISPER_SMALL`、`WHISPER_MODEL`；`PYTHONUTF8=1`（系統是 Big5，沒有這個中文輸出會出錯）。qa.py 在 Windows 跳過 OCR，改成看接觸表核字。沒有 `pgrep`，起渲染佇列前用 `ps -ef | grep queue.sh` 確認沒有第二個在跑。skill 原始碼在 `~/code/vibe-knowledge`（git，用戶的 fork），`~/.claude/skills/` 底下是連結，更新用 `git -C ~/code/vibe-knowledge pull`。
+
 ## 流水线（三个确认点）
 
 | 段 | 做什么 | 产出 |

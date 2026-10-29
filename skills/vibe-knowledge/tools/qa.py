@@ -17,9 +17,13 @@ for f in fr.glob("*.png"): f.unlink()
 subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-vf", f"fps=1/{every},scale=1600:-2", str(fr / "f_%04d.png")], check=True)
 fs = sorted(fr.glob("f_*.png"))
 ocr = SK / "ocr"
-if not ocr.exists() or ocr.stat().st_mtime < (SK / "ocr.swift").stat().st_mtime:
-    subprocess.run(["swiftc", "-O", str(SK / "ocr.swift"), "-o", str(ocr)], check=True)
-txt = subprocess.run([str(ocr), *map(str, fs)], capture_output=True, text=True).stdout
+if sys.platform == "darwin":
+    if not ocr.exists() or ocr.stat().st_mtime < (SK / "ocr.swift").stat().st_mtime:
+        subprocess.run(["swiftc", "-O", str(SK / "ocr.swift"), "-o", str(ocr)], check=True)
+    txt = subprocess.run([str(ocr), *map(str, fs)], capture_output=True, text=True).stdout
+else:  # Vision OCR 只有 macOS 有：其他系統跳過，改看接觸表逐張核對畫面字
+    print("（非 macOS：跳過 OCR 回讀，請看 sheet.jpg 逐張核對畫面上的字）")
+    txt = ""
 lines, seen = [], []
 for blk in txt.split("@@")[1:]:
     ls = blk.strip().split("\n"); i = int(re.search(r"(\d+)", ls[0]).group(1)); t = (i - 1) * every
