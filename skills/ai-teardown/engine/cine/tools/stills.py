@@ -11,6 +11,16 @@ from PIL import Image, ImageDraw, ImageFont
 from browser import launch
 
 
+def next_font(size):
+    # 標籤字型：macOS 的檔案在 Windows / Linux 上沒有，依序找替代，都沒有就用 Pillow 內建字
+    for name in ['/System/Library/Fonts/Menlo.ttc', 'consola.ttf', 'DejaVuSansMono.ttf']:
+        try:
+            return ImageFont.truetype(name, size)
+        except OSError:
+            pass
+    return ImageFont.load_default(size)
+
+
 
 def arg(name, default):
     return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else default
@@ -47,7 +57,7 @@ def main():
     rows = (len(shots) + cols - 1) // cols
     sheet = Image.new("RGB", (cols * tw, rows * (th + 26)), (20, 20, 24))
     d = ImageDraw.Draw(sheet)
-    f = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 15)
+    f = next_font(15)
     for i, (a, t, img) in enumerate(shots):
         x, y = (i % cols) * tw, (i // cols) * (th + 26)
         sheet.paste(img.resize((tw, th), Image.LANCZOS), (x, y + 26))

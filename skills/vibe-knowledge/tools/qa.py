@@ -9,6 +9,16 @@ import re, subprocess, sys
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
+def next_font(size):
+    # 標籤字型：macOS 的檔案在 Windows / Linux 上沒有，依序找替代，都沒有就用 Pillow 內建字
+    for name in ['/System/Library/Fonts/Supplemental/Arial.ttf', 'arial.ttf', 'DejaVuSans.ttf']:
+        try:
+            return ImageFont.truetype(name, size)
+        except OSError:
+            pass
+    return ImageFont.load_default(size)
+
+
 def arg(n, d): return sys.argv[sys.argv.index(n) + 1] if n in sys.argv else d
 SK = Path(__file__).resolve().parent
 src = Path(sys.argv[1]); every = float(arg("--every", "3")); out = Path(arg("--out", str(src.parent / "qa")))
@@ -34,7 +44,7 @@ for blk in txt.split("@@")[1:]:
 (out / "ocr.txt").write_text("\n".join(lines), encoding="utf-8")
 w = 400; ims = [Image.open(f) for f in fs]; h = int(w * ims[0].height / ims[0].width); cols = 6
 sheet = Image.new("RGB", (cols * w, ((len(ims) + cols - 1) // cols) * h), "black"); d = ImageDraw.Draw(sheet)
-font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial.ttf", 20)
+font = next_font(20)
 for i, im in enumerate(ims):
     x, y = (i % cols) * w, (i // cols) * h; sheet.paste(im.resize((w, h)), (x, y)); t = i * every
     d.rectangle([x, y, x + 70, y + 24], fill="black"); d.text((x + 4, y + 2), f"{int(t // 60)}:{int(t % 60):02d}", fill="yellow", font=font)
@@ -54,6 +64,7 @@ else:
     print("静止检测：没有超过 3 秒的静止画面")
 # ── BGM 强制检查 ──
 import numpy as np
+
 def _pcm(f, t, sr=4000):
     b = subprocess.run(["ffmpeg", "-v", "error", "-t", str(t), "-i", str(f), "-ac", "1", "-ar", str(sr), "-f", "f32le", "-"], capture_output=True).stdout
     return np.frombuffer(b, np.float32).copy()
