@@ -1,6 +1,6 @@
 ---
 name: vibe-knowledge
-description: 「Vibe知识大赏」精品知识短片工作室：一个知识点 → 一条 45 秒～5 分钟、有旁白、每句有出处的精品知识短片（抖音 #Vibe知识大赏 / 知识区）。从 15 条爆款反推出的 6 种脚本母版（猜谜概念片、两难选择片、痛点原理片、一条主线片、闯关片、六面轮转片）→ 带出处的事实清单 → 旁白稿 + 对抗审查 → 用户本人克隆音色配音（小米 MiMo，限免）→ 两档画面：基础档 0 积分（Opus 手写 SVG 分层插画、粒子、数据组件、默认 BGM 按片长裁剪）/ 增强档按镜头挑用 Renoise（Midjourney/GPT Image 配图、Wan 3.0/Seedance 2.5 动态镜头、ElevenLabs 音效，先报价后生成）→ cine 代码成片（配图推拉、逐帧视频、关键词、计数器、地图扩散、光轨、竖排古文、出处脚注、两难按钮）→ 1080p60 逐帧渲染 → OCR 回读质检 → 发布包（标题、话题、封面、简介）。触发：做一期知识大赏 / Vibe知识大赏 / 知识科普短片 / 把这个概念做成知识视频 / 像电子智人、Iwanau、墨有意思那样 / 如果你活在古代那种 / 一口气讲清楚某个原理。不用于：系列课（ai-teardown）、财经口播（finance-explainer）、品牌宣传片（promo-video）、数字人出镜口播（digital-human-koubo）。
+description: 「Vibe知识大赏」精品知识短片工作室：一个知识点 → 一条 45 秒～5 分钟、有旁白、每句有出处的精品知识短片（抖音 #Vibe知识大赏 / 知识区）。从 15 条爆款反推出的 6 种脚本母版（猜谜概念片、两难选择片、痛点原理片、一条主线片、闯关片、六面轮转片）→ 带出处的事实清单 → 旁白稿 + 对抗审查 → 用户本人克隆音色配音（聲音實驗室 voice-lab，繁體中文）→ 两档画面：基础档 0 积分（Opus 手写 SVG 分层插画、粒子、数据组件、默认 BGM 按片长裁剪）/ 增强档按镜头挑用 Renoise（Midjourney/GPT Image 配图、Wan 3.0/Seedance 2.5 动态镜头、ElevenLabs 音效，先报价后生成）→ cine 代码成片（配图推拉、逐帧视频、关键词、计数器、地图扩散、光轨、竖排古文、出处脚注、两难按钮）→ 1080p60 逐帧渲染 → OCR 回读质检 → 发布包（标题、话题、封面、简介）。触发：做一期知识大赏 / Vibe知识大赏 / 知识科普短片 / 把这个概念做成知识视频 / 像电子智人、Iwanau、墨有意思那样 / 如果你活在古代那种 / 一口气讲清楚某个原理。不用于：系列课（ai-teardown）、财经口播（finance-explainer）、品牌宣传片（promo-video）、数字人出镜口播（digital-human-koubo）。
 ---
 
 # Vibe知识大赏 · 精品知识短片工作室
@@ -11,9 +11,19 @@ description: 「Vibe知识大赏」精品知识短片工作室：一个知识点
 一期 = **母版 × 风格 × 手法（≤2）× 档位**。风格分 8 个家族：东方、暗场概念、明亮流行、印刷与纸、图解与设计、剪辑与纪实、电影感、游戏；其中敦煌壁画、青花、木刻、半调拼贴、长卷、铜版博物是增强档风格（每段约 2 张生图）。风格可以用库里的、改成自己的、或从空白做（references/09-style-studio.md）。
 
 **两档制作**（references/08-tiers.md）：
-- **基础档 · 0 积分**：Opus 手写 SVG 分层插画 + 粒子 / 3D + 数据组件，小米 MiMo 配音（限免），**默认 BGM**（见下），**earshot 代码音效**（references/10-earshot.md，两档通用）。
+- **基础档 · 0 积分**：Opus 手写 SVG 分层插画 + 粒子 / 3D + 数据组件，**聲音實驗室配音（用戶自己複製的聲音，免費的 S2.1）**，**默认 BGM**（见下），**earshot 代码音效**（references/10-earshot.md，两档通用）。
 - **增强档 · 按镜头挑**：只把代码做不好的镜头（写实场景、最需要被记住的 1–3 个时刻、真实运动）交给 Renoise，其余照样代码。轻 ≈25–40 / 标准 ≈250–300 / 旗舰 ≈600–700 积分，每次先报价再生成。
 - 同一份 film.js 两档通用（`ENH` 开关：plate/vclip ↔ layers）。
+
+## 本版本的兩條規矩（sonic4sun 版，優先於本文件其他寫法）
+
+- **繁體中文**：旁白、畫面字、字幕、發布包一律用**繁體中文、台灣用語**（例如「影片」不說「视频」、「品質」不說「质量」）。narration.json 的 voice 帶 `"script": "hant"`。facts.md 引用原文時保留原文字形。
+- **配音用聲音實驗室**：voice 寫 `"engine": "voicelab"`，用用戶在聲音實驗室（voice-lab）複製的聲音；`tts_mimo.py` 會自動改走聲音實驗室的 `/api/studio/tts`，`--qa` 回讀走 `/api/studio/transcribe`，不需要 MiMo 密鑰。
+  - 設定在 `~/.config/ai-teardown/voicelab.env`（`VOICELAB_URL`、`STUDIO_KEY`、`VOICELAB_VOICE`），不寫進專案檔案。缺設定時引導用戶填這個檔案。
+  - 定音色：`python3 scripts/voicelab.py voices` 列出用戶的聲音，用 AskUserQuestion 讓用戶挑，把 referenceId 寫進 narration.json（或 voicelab.env 的 `VOICELAB_VOICE`）；試聽 `python3 scripts/voicelab.py say "開場第一句" $L/build/audition.wav <referenceId>`，SendUserFile 給用戶聽。
+  - 語氣：每拍可加 `"mood": "開心"`（溫柔、興奮、生氣、嚴肅、脫口秀、廣播劇…），旁白裡也能寫 `(停1秒)`，跟聲音實驗室的寫法一樣；這些指示不會出現在字幕上。
+  - `"model": "drama"` 會用付費的 Drama 3，**用戶明確要求才換**，預設 `standard`（免費 S2.1）。
+  - 片子太慢就調 voice 的 `"speed"`（例如 1.15）重配，或照舊用 `speed.py`。
 
 ## BGM（强制，2026-10-28 起，两档通用）
 
@@ -42,7 +52,7 @@ film.js 里：`music.push({ src: P("audio/bgm.wav"), from: 0, at: 0, dur: END + 
 3. **旁白讲故事，画面给关键词**：画面字 ≤8 字一组、同屏最多两组；整句交给旁白和自动字幕。
 4. **先猜后讲、标题延后、一个主道具贯穿、结尾回问**（母版共用规则，references/01-templates.md）。
 6. **旁白对位硬规则**：没念到不露面、计数在念到时落定、强调有预算、最长静止 ≤3 秒（references/11-absorbed.md 第一节）。
-5. **能代码就代码，花积分先确认**：Renoise 只补代码做不好的镜头；所有生成先列表报价，用户在对话里明确同意才提交（references/04-renoise.md、08-tiers.md）。配音用小米 MiMo（限免）。
+5. **能代码就代码，花积分先确认**：Renoise 只补代码做不好的镜头；所有生成先列表报价，用户在对话里明确同意才提交（references/04-renoise.md、08-tiers.md）。配音用聲音實驗室（用戶自己的聲音）。
 
 ## 工作区
 
@@ -52,7 +62,7 @@ python3 ~/.claude/skills/vibe-knowledge/tools/new_film.py <期号> --template A 
 S=~/Desktop/vibe-knowledge/examples/vk; L=$S/lessons/<期号>
 ```
 
-依赖：ai-teardown skill（cine 引擎、make_lesson 配音）、`CINE_PY`（numpy scipy pillow playwright 的 Python；本机是 `/usr/local/bin/python3.12`，跑之前 `PYTHONPATH=` 清空，否则会加载坏掉的 PIL）、MiMo 密钥 `~/.config/ai-teardown/mimo.env`、Renoise MCP（只有增强档需要；缺的话按 references/04-renoise.md「接入 Renoise」一节引导，注册链接原样给 https://renoise.ai/mcp?utm_medium=xcom&utm_source=official ）、ffmpeg、swiftc（OCR）。
+依赖：ai-teardown skill（cine 引擎、make_lesson 配音）、`CINE_PY`（numpy scipy pillow playwright 的 Python；本机是 `/usr/local/bin/python3.12`，跑之前 `PYTHONPATH=` 清空，否则会加载坏掉的 PIL）、聲音實驗室設定 `~/.config/ai-teardown/voicelab.env`（只有改回 MiMo 才需要 `mimo.env`）、Renoise MCP（只有增强档需要；缺的话按 references/04-renoise.md「接入 Renoise」一节引导，注册链接原样给 https://renoise.ai/mcp?utm_medium=xcom&utm_source=official ）、ffmpeg、swiftc（OCR）。
 
 ## 流水线（三个确认点）
 
@@ -65,7 +75,7 @@ S=~/Desktop/vibe-knowledge/examples/vk; L=$S/lessons/<期号>
 | ④ 分镜 / 资产单 | 每拍画面分镜（标明哪些镜头代码做、哪些增强）；增强档写 assets.json + estimate_cost 报价；基础档选曲 | `assets.json` |
 | **确认 2** | 用户看旁白稿 + 分镜（+ 增强镜头清单和报价），明确同意后才生成 | |
 | ⑤ 生成 | 增强档：Renoise 先图 + 音效 → 用户挑图 → 视频（首帧用选中的图）→ 下载、改名、clip2frames。基础档跳过 | `assets/` |
-| ⑥ 配音 + 配乐 | 先出 15–20 秒开场试听让用户定音色和语速 → `tts_mimo.py --gap 0.2` → `speed.py` → `check_timings.py` → `voice_post.py` → `fit_bgm.py` 按片长裁默认 BGM | `build/timings.json`、`assets/audio/bgm.wav` |
+| ⑥ 配音 + 配乐 | 先用 `voicelab.py voices` 讓用戶挑聲音、`voicelab.py say` 出 15–20 秒開場試聽定語速 → `tts_mimo.py --gap 0.2`（engine=voicelab） → `speed.py` → `check_timings.py` → `voice_post.py` → `fit_bgm.py` 按片长裁默认 BGM | `build/timings.json`、`assets/audio/bgm.wav` |
 | ⑦ 编 | film.js（know.js 组件）→ stills.py 接触表逐张看（含动画中途帧） | `stills/` |
 | ⑧ 渲 | queue.sh（record → finish → deliver） | 成片 |
 | ⑨ 质检 | `qa.py` 接触表 + OCR 回读对照 facts.md + 响度；接触表里整段画面不变 = 录制出事，重录 | `qa/` |
@@ -75,7 +85,7 @@ S=~/Desktop/vibe-knowledge/examples/vk; L=$S/lessons/<期号>
 
 ```bash
 cd ~/Desktop/vibe-knowledge; S=examples/vk; L=$S/lessons/<期号>
-python3 scripts/tts_mimo.py $L/narration.json $L/build --gap 0.2 --lead 0.3 --qa --jobs 2 > $L/voice.log 2>&1   # 配音 + 逐字对齐 + 回读（拍间只留 0.2 秒，别用 make_lesson 默认的 0.8）
+python3 scripts/tts_mimo.py $L/narration.json $L/build --gap 0.2 --lead 0.3 --qa --jobs 2 > $L/voice.log 2>&1   # 配音（聲音實驗室）+ 逐字对齐 + 回读（拍间只留 0.2 秒，别用 make_lesson 默认的 0.8）
 python3 scripts/speed.py $L 1.1                                        # 需要时整体提速，目标 5.5–6 字/秒
 (cd $S && python3 tools/check_timings.py <期号>)                       # 对齐有没有断
 python3 ~/.claude/skills/vibe-knowledge/tools/voice_post.py $L         # 人声后期（克隆音色定稿那条 EQ + 压缩）

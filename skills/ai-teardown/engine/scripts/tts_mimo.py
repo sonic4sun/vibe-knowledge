@@ -16,6 +16,11 @@ timings 里每拍的 words 是逐字的 {text, start, end, i0, i1}，另有 char
 --jobs：同时合成几拍（默认 3；MiMo 连发太多会 429，脚本会自动退避）。
 --reuse：已有的 audio/<beat>.wav 一律不重新合成，只重新对齐（改对齐逻辑时用）。
 默认也会复用：同一拍的音色、语气、文字都没变时直接用上次的录音（audio/<beat>.key 记着指纹）。
+
+聲音實驗室：voice 寫 {"engine": "voicelab", "referenceId": "…", "script": "hant"} 就改用自己在聲音實驗室複製的聲音配音，
+--qa 回讀也走聲音實驗室，不需要 MiMo 密鑰。設定與每拍 "mood" 的寫法見 voicelab.py。
+"script": "hant"：旁白是繁體中文，whisper 對齊提示改用繁體（MiMo、聲音實驗室都適用）。
+whisper 模型路徑可用環境變數 WHISPER_MODEL、WHISPER_SMALL 指定（Windows / Linux 用）。
 """
 import base64
 import codecs
@@ -33,8 +38,8 @@ from pathlib import Path
 CUE_RE = re.compile(r"\[\[([a-z][a-z0-9_-]*)\]\]")
 PUNCT = set("，。！？；：、,.!?;:（）()「」『』“”\"'《》…—- 　")
 # 对齐用的 whisper 模型：small 比 medium 快一倍多，对齐率只低一两个点；对不齐的拍再用 medium 补
-WHISPER_SMALL = Path.home() / "Library/Application Support/Memo/models/ggml-small.bin"
-WHISPER_MODEL = Path.home() / "Library/Application Support/Murmur/models/ggml-medium-q5_0.bin"
+WHISPER_SMALL = Path(os.environ.get("WHISPER_SMALL") or Path.home() / "Library/Application Support/Memo/models/ggml-small.bin")
+WHISPER_MODEL = Path(os.environ.get("WHISPER_MODEL") or Path.home() / "Library/Application Support/Murmur/models/ggml-medium-q5_0.bin")
 DEFAULT_STYLE = "像老师给学生讲一个有意思的小故事：亲切、自然、带一点好奇，语速适中，句子之间自然停顿。"
 
 
@@ -113,6 +118,8 @@ def probe(path):
 
 
 LANG = "zh"   # narration.json 的 voice.lang；"en" = 英文课
+HANT = False  # narration.json 的 voice.script == "hant"：繁體旁白
+ZH_PROMPT = "以下是普通话的句子。"
 
 
 def whisper_chars(wav, prompt="", model=None):
@@ -122,7 +129,7 @@ def whisper_chars(wav, prompt="", model=None):
         w16 = Path(td) / "a.wav"
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(wav), "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", str(w16)], check=True)
         subprocess.run(["whisper-cli", "-m", str(model or WHISPER_MODEL), "-l", LANG, "-f", str(w16), "-ojf", "-of", str(Path(td) / "o"), "-np",
-                        "--prompt", prompt or ("以下是普通话的句子。" if LANG == "zh" else "An English sentence.")],
+                        "--prompt", prompt or (ZH_PROMPT if LANG == "zh" else "An English sentence.")],
                        capture_output=True, check=True)
         d = json.loads((Path(td) / "o.json").read_bytes().decode("utf-8", "surrogateescape"))
     dec = codecs.getincrementaldecoder("utf-8")(errors="ignore")
@@ -184,9 +191,16 @@ def asr(key, base, wav):
 CN_NUM = str.maketrans("零〇一二三四五六七八九", "00123456789")
 
 
+try:  # 回读可能一边繁一边简，有 opencc 就统一成简体再比
+    import opencc
+    _T2S = opencc.OpenCC("t2s").convert
+except Exception:  # noqa: BLE001
+    _T2S = lambda s: s
+
+
 def qa_diff(text, heard):
     """回读比对：去掉标点、统一数字写法后比，返回 (相似度, 差异片段)"""
-    f = lambda s: [c for c in s.lower().translate(CN_NUM) if c not in PUNCT and not c.isspace()]
+    f = lambda s: [c for c in _T2S(s).lower().translate(CN_NUM) if c not in PUNCT and not c.isspace()]
     a, b = f(text), f(heard.replace("做", "作"))
     sm = difflib.SequenceMatcher(None, a, b, autojunk=False)
     diffs = [("".join(a[i1:i2]), "".join(b[j1:j2])) for op, i1, i2, j1, j2 in sm.get_opcodes() if op != "equal"]
@@ -229,9 +243,15 @@ def main():
     lead = float(arg("--lead", 0.6))
     jobs = int(arg("--jobs", 3))
     data = json.loads(src.read_text(encoding="utf-8"))
-    vcfg = data.get("voice", {}) if data.get("voice", {}).get("engine") == "mimo" else {}
-    global LANG
+    engine = data.get("voice", {}).get("engine")
+    vcfg = data.get("voice", {}) if engine in ("mimo", "voicelab") else {}
+    global LANG, HANT, ZH_PROMPT
     LANG = data.get("voice", {}).get("lang", "zh")
+    HANT = data.get("voice", {}).get("script") == "hant"
+    if HANT:
+        ZH_PROMPT = "以下是國語的句子，用繁體中文。"
+    if engine == "voicelab":
+        import voicelab
     model = arg("--model", vcfg.get("model", "mimo-v2.5-tts"))
     voice = arg("--voice", vcfg.get("voice", "茉莉"))
     style = arg("--style", vcfg.get("style", DEFAULT_STYLE))
@@ -243,13 +263,23 @@ def main():
         clone_url = "data:audio/wav;base64," + base64.b64encode(ref.read_bytes()).decode()
         ref_digest = hashlib.md5(ref.read_bytes()).hexdigest()
     lexicon = data.get("lexicon", {})
-    key, base = env()
+    key, base = env() if engine != "voicelab" else (None, None)
     (out / "audio").mkdir(parents=True, exist_ok=True)
     t_start = time.time()
 
     # 每一拍的准备：文字、cue 位置、请求体、缓存指纹
     jobs_list = []
     for b in data["beats"]:
+        if engine == "voicelab":
+            shown, said = voicelab.split_directives(b["narration"])
+            clean, cue_pos = strip_cues(shown)
+            say = apply_lexicon(strip_cues(said)[0], lexicon)
+            body = {"text": say, "mood": b.get("mood")}
+            digest = hashlib.md5(json.dumps(["voicelab", vcfg.get("referenceId"), vcfg.get("model"), vcfg.get("speed"),
+                                             vcfg.get("temperature"), vcfg.get("top_p"), b.get("mood"), say], ensure_ascii=False).encode()).hexdigest()
+            jobs_list.append({"b": b, "clean": clean, "cue_pos": cue_pos, "body": body, "digest": digest,
+                              "wav": out / "audio" / f"{b['id']}.wav", "mp3": out / "audio" / f"{b['id']}.mp3", "meta": out / "audio" / f"{b['id']}.key"})
+            continue
         clean, cue_pos = strip_cues(b["narration"])
         say = apply_lexicon(clean, lexicon)
         msgs = ([{"role": "user", "content": style}] if style else []) + [{"role": "assistant", "content": say}]
@@ -266,9 +296,12 @@ def main():
         t0 = time.time()
         reuse = j["wav"].exists() and ("--reuse" in sys.argv or (j["meta"].exists() and j["meta"].read_text() == j["digest"]))
         if not reuse:
-            d = call(key, base, j["body"])
             raw = j["wav"].with_suffix(".raw.wav")
-            raw.write_bytes(base64.b64decode(d["choices"][0]["message"]["audio"]["data"]))
+            if engine == "voicelab":
+                raw.write_bytes(voicelab.tts(j["body"]["text"], vcfg, j["body"]["mood"]))
+            else:
+                d = call(key, base, j["body"])
+                raw.write_bytes(base64.b64decode(d["choices"][0]["message"]["audio"]["data"]))
             # 去掉首尾静音，节奏由 gap 控制
             subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(raw), "-af",
                             "silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.05,areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.08,areverse",
@@ -282,7 +315,8 @@ def main():
     def align_one(j):
         clean = j["clean"]
         terms = "、".join(dict.fromkeys(re.findall(r"[A-Za-z][A-Za-z0-9.\-]*|《[^》]+》", clean)))
-        short = ("以下是普通话，用简体中文。" + (f"会提到：{terms}。" if terms else "")) if LANG == "zh" else (f"Terms: {terms}." if terms else "")
+        zh = ("以下是國語，用繁體中文。" + (f"會提到：{terms}。" if terms else "")) if HANT else ("以下是普通话，用简体中文。" + (f"会提到：{terms}。" if terms else ""))
+        short = zh if LANG == "zh" else (f"Terms: {terms}." if terms else "")
         tries = [(short, WHISPER_SMALL if WHISPER_SMALL.exists() else None), (short, WHISPER_MODEL), (clean, WHISPER_MODEL)]
         rel, cover = None, -1
         for prompt, model in tries:
@@ -293,7 +327,7 @@ def main():
                 break
         j["rel"], j["cover"] = rel, cover
         if "--qa" in sys.argv:
-            heard = asr(key, base, j["wav"])
+            heard = voicelab.transcribe(j["wav"]) if engine == "voicelab" else asr(key, base, j["wav"])
             j["qa"] = (heard, *qa_diff(clean, heard))
 
     from concurrent.futures import ThreadPoolExecutor
@@ -303,7 +337,10 @@ def main():
         list(ex.map(align_one, jobs_list))
 
     # 第三步（顺序）：按时长排出绝对时间
-    timings = {"voice": {"engine": "mimo", "model": model, "voice": None if clone else voice, "clone": str(clone) if clone else None, "style": style}, "beats": {}}
+    if engine == "voicelab":
+        timings = {"voice": {"engine": "voicelab", "referenceId": vcfg.get("referenceId"), "model": vcfg.get("model", "standard")}, "beats": {}}
+    else:
+        timings = {"voice": {"engine": "mimo", "model": model, "voice": None if clone else voice, "clone": str(clone) if clone else None, "style": style}, "beats": {}}
     t, parts, report = lead, [], []
     for j in jobs_list:
         b, clean, dur = j["b"], j["clean"], j["dur"]

@@ -2,9 +2,12 @@
  "_template": "母版 F · 六面轮转片 · 45–60 秒 · 约 180–240 字",
  "_how": "把每拍 narration 换成正式旁白（口语、短句、每句 ≤22 字），保留需要的 [[cue]]（只用小写字母数字下划线），删掉 _guide。旁白里英文名不要带连字符。",
  "voice": {
-  "engine": "mimo",
-  "clone": "../../voice/host-ref.wav",
-  "style": "科技博主讲硬核冷知识：语速快、节奏紧凑，一句接一句不拖音，句间停顿很短；关键数字和关键词加重落下；有悬念感和网感，自然口语，不要播音腔，问句也干脆，不要一字一顿。"
+  "engine": "voicelab",
+  "referenceId": "",
+  "model": "standard",
+  "speed": 1.0,
+  "script": "hant",
+  "_voice": "referenceId 留空 = 用 voicelab.env 的 VOICELAB_VOICE；model 寫 drama 才會用付費的 Drama 3。想換回小米 MiMo：engine 改 mimo，加 clone 和 style（見 tts_mimo.py）。"
  },
  "lexicon": {
   "AI": "A I"

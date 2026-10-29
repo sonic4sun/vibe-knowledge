@@ -17,6 +17,31 @@ Claude Code skill：选题 → 查证 → 写稿 → 配音 → 代码成片 →
 
 ---
 
+## 這個版本（sonic4sun 改版）改了什麼
+
+原版用小米 MiMo 配音；這一版改成接**聲音實驗室（voice-lab）**，用自己複製的聲音配旁白，產出預設**繁體中文、台灣用語**。其餘（母版、風格庫、cine 引擎、BGM、質檢）跟原版一樣。
+
+| 改了哪裡 | 做什麼 |
+|---|---|
+| `skills/ai-teardown/engine/scripts/voicelab.py` | 新增：呼叫聲音實驗室的 `/api/studio/tts`（配音）、`/api/studio/transcribe`（回讀）、`/api/studio/voices`（列聲音） |
+| `skills/ai-teardown/engine/scripts/tts_mimo.py` | voice 寫 `"engine": "voicelab"` 就改走聲音實驗室；`"script": "hant"` 讓對齊用繁體；whisper 模型路徑可用環境變數 `WHISPER_MODEL`、`WHISPER_SMALL` 指定 |
+| `skills/vibe-knowledge/templates/narration/*.json` | 六個母版預設改成聲音實驗室 + 繁體 |
+| `skills/vibe-knowledge/SKILL.md` | 開頭加「本版本的兩條規矩」：繁體中文、配音用聲音實驗室 |
+
+**設定一次就好**：建立 `~/.config/ai-teardown/voicelab.env`（不要放進專案資料夾）：
+
+```
+VOICELAB_URL=https://你的聲音實驗室網址
+STUDIO_KEY=工作室通行金鑰（跟聲音實驗室 Railway 上的 STUDIO_KEY 一樣）
+VOICELAB_VOICE=預設聲音的 referenceId（可省，用 voicelab.py voices 查）
+```
+
+設好後在工作區跑 `python3 scripts/voicelab.py voices`，列得出你的聲音就接通了。不需要 MiMo 密鑰。
+
+旁白寫法跟聲音實驗室一樣：每拍可加 `"mood": "開心"`，句子裡可以寫 `(停1秒)`；這些指示不會出現在字幕上。其他括號（例如「（公元前 359 年）」）會照念。
+
+---
+
 ## 看样片
 
 点封面播放（视频放在 [Release v1.0.0](https://github.com/andyhuo520/vibe-knowledge/releases/tag/v1.0.0)）。所有画面都由 Claude Opus 编排、代码逐帧渲染；标「增强」的镜头用 [Renoise](https://renoise.ai/mcp?utm_medium=xcom&utm_source=official) 生成配图和动态镜头，片中都标注「AI 示意」。
@@ -112,7 +137,7 @@ Claude Code skill：选题 → 查证 → 写稿 → 配音 → 代码成片 →
 ## 安装
 
 ```bash
-git clone https://github.com/andyhuo520/vibe-knowledge.git
+git clone https://github.com/sonic4sun/vibe-knowledge.git
 cp -R vibe-knowledge/skills/vibe-knowledge vibe-knowledge/skills/ai-teardown ~/.claude/skills/
 ```
 
