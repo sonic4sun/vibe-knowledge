@@ -94,7 +94,9 @@ def _curl(args, tries=6):
         last = f"HTTP {code or '?'} {(body[:300].decode('utf-8', 'replace') or r.stderr[:200])}"
         if code == "401":
             last += "（STUDIO_KEY 不對，或聲音實驗室沒設 STUDIO_KEY）"
-        if code in ("400", "401", "403", "404"):  # 設定錯了，重試也沒用
+        if code == "402":
+            last += "（額度不足：Fish 或 Gemini 的 API 要儲值）"
+        if code in ("400", "401", "402", "403", "404"):  # 設定錯了或沒額度，重試也沒用
             break
         wait = min(60, 5 * (k + 1)) if code == "429" else 2 * (k + 1)
         print(f"  {wait}s 後重試 {k + 1}：{last}", file=sys.stderr)

@@ -326,8 +326,14 @@ def main():
             if cover >= 0.9:
                 break
         j["rel"], j["cover"] = rel, cover
-        if "--qa" in sys.argv:
-            heard = voicelab.transcribe(j["wav"]) if engine == "voicelab" else asr(key, base, j["wav"])
+        if "--qa" in sys.argv and engine == "voicelab":
+            try:  # 回讀走 Fish 的語音轉文字，沒額度時跳過回讀，不讓整條配音失敗
+                heard = voicelab.transcribe(j["wav"])
+                j["qa"] = (heard, *qa_diff(clean, heard))
+            except RuntimeError as e:
+                j["qa_skip"] = str(e)
+        elif "--qa" in sys.argv:
+            heard = asr(key, base, j["wav"])
             j["qa"] = (heard, *qa_diff(clean, heard))
 
     from concurrent.futures import ThreadPoolExecutor
@@ -367,6 +373,8 @@ def main():
             odd = odd_numbers(clean, heard)
             line += f"  回读 {ratio:.0%}" + (f"  差异 {diffs[:4]}" if diffs else "") + (f"  ⚠ 可疑读数 {odd}" if odd else "")
             report.append({"beat": b["id"], "heard": heard, "ratio": round(ratio, 3), "diffs": diffs, **({"odd_numbers": odd} if odd else {})})
+        if "qa_skip" in j:
+            line += "  回讀跳過"
         print(line)
         parts.append((j["mp3"], t))
         t += dur + max(gap, b.get("gap", 0), b.get("min_hold_s", 0))
@@ -384,6 +392,9 @@ def main():
     (out / "timings.json").write_text(json.dumps(timings, ensure_ascii=False, indent=1), encoding="utf-8")
     if report:
         (out / "qa.json").write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
+    skipped = [j for j in jobs_list if "qa_skip" in j]
+    if skipped:
+        print(f"⚠ 回讀沒做（{len(skipped)} 拍）：{skipped[0]['qa_skip']}——請自己聽一遍，或看 whisper 對齊率")
     odd = [r["beat"] for r in report if r.get("odd_numbers")]
     if odd:
         print(f"⚠ 这几拍回读出现原文没有的数字，先听一下：{'、'.join(odd)}（缩写被当罗马数字念时，在 lexicon 里拆成单个字母）")
