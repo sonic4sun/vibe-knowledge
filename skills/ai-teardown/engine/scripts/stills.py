@@ -6,6 +6,16 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 from PIL import Image, ImageDraw, ImageFont
 
+
+def next_font(size):
+    # 標籤字型：macOS 的檔案在 Windows / Linux 上沒有，依序找替代，都沒有就用 Pillow 內建字
+    for name in ['/System/Library/Fonts/Menlo.ttc', 'consola.ttf', 'DejaVuSansMono.ttf']:
+        try:
+            return ImageFont.truetype(name, size)
+        except OSError:
+            pass
+    return ImageFont.load_default(size)
+
 EXE = Path.home() / "Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell"
 
 def main():
@@ -35,7 +45,7 @@ def main():
     sheet = Image.new("RGB", (cols * tw, rows * (th + 26)), "#111")
     d = ImageDraw.Draw(sheet)
     try:
-        font = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 16)
+        font = next_font(16)
     except OSError:
         font = ImageFont.load_default()
     for i, (t, fn) in enumerate(frames):

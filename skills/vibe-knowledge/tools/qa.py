@@ -9,6 +9,16 @@ import re, subprocess, sys
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
+def next_font(size):
+    # 標籤字型：macOS 的檔案在 Windows / Linux 上沒有，依序找替代，都沒有就用 Pillow 內建字
+    for name in ['/System/Library/Fonts/Supplemental/Arial.ttf', 'arial.ttf', 'DejaVuSans.ttf']:
+        try:
+            return ImageFont.truetype(name, size)
+        except OSError:
+            pass
+    return ImageFont.load_default(size)
+
+
 def arg(n, d): return sys.argv[sys.argv.index(n) + 1] if n in sys.argv else d
 SK = Path(__file__).resolve().parent
 src = Path(sys.argv[1]); every = float(arg("--every", "3")); out = Path(arg("--out", str(src.parent / "qa")))
@@ -17,9 +27,13 @@ for f in fr.glob("*.png"): f.unlink()
 subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-vf", f"fps=1/{every},scale=1600:-2", str(fr / "f_%04d.png")], check=True)
 fs = sorted(fr.glob("f_*.png"))
 ocr = SK / "ocr"
-if not ocr.exists() or ocr.stat().st_mtime < (SK / "ocr.swift").stat().st_mtime:
-    subprocess.run(["swiftc", "-O", str(SK / "ocr.swift"), "-o", str(ocr)], check=True)
-txt = subprocess.run([str(ocr), *map(str, fs)], capture_output=True, text=True).stdout
+if sys.platform == "darwin":
+    if not ocr.exists() or ocr.stat().st_mtime < (SK / "ocr.swift").stat().st_mtime:
+        subprocess.run(["swiftc", "-O", str(SK / "ocr.swift"), "-o", str(ocr)], check=True)
+    txt = subprocess.run([str(ocr), *map(str, fs)], capture_output=True, text=True).stdout
+else:  # Vision OCR 只有 macOS 有：其他系統跳過，改看接觸表逐張核對畫面字
+    print("（非 macOS：跳過 OCR 回讀，請看 sheet.jpg 逐張核對畫面上的字）")
+    txt = ""
 lines, seen = [], []
 for blk in txt.split("@@")[1:]:
     ls = blk.strip().split("\n"); i = int(re.search(r"(\d+)", ls[0]).group(1)); t = (i - 1) * every
@@ -30,7 +44,7 @@ for blk in txt.split("@@")[1:]:
 (out / "ocr.txt").write_text("\n".join(lines), encoding="utf-8")
 w = 400; ims = [Image.open(f) for f in fs]; h = int(w * ims[0].height / ims[0].width); cols = 6
 sheet = Image.new("RGB", (cols * w, ((len(ims) + cols - 1) // cols) * h), "black"); d = ImageDraw.Draw(sheet)
-font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial.ttf", 20)
+font = next_font(20)
 for i, im in enumerate(ims):
     x, y = (i % cols) * w, (i // cols) * h; sheet.paste(im.resize((w, h)), (x, y)); t = i * every
     d.rectangle([x, y, x + 70, y + 24], fill="black"); d.text((x + 4, y + 2), f"{int(t // 60)}:{int(t % 60):02d}", fill="yellow", font=font)
@@ -50,6 +64,7 @@ else:
     print("静止检测：没有超过 3 秒的静止画面")
 # ── BGM 强制检查 ──
 import numpy as np
+
 def _pcm(f, t, sr=4000):
     b = subprocess.run(["ffmpeg", "-v", "error", "-t", str(t), "-i", str(f), "-ac", "1", "-ar", str(sr), "-f", "f32le", "-"], capture_output=True).stdout
     return np.frombuffer(b, np.float32).copy()

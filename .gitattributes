@@ -1,0 +1,2 @@
+# 一律用 LF 換行：Windows 的 git 預設會轉成 CRLF，會讓 new_film.py 的文字補丁對不上、bash 腳本跑不動
+* text=auto eol=lf

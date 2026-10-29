@@ -77,8 +77,8 @@ def main():
     shutil.copy(SKILL / "kit/know.js", sd / "cine/engine/know.js")
     patch_tools(sd)
     patch_finish(sd)
-    patch_bgm(sd)
     sys.path.insert(0, str(SKILL / "tools")); import patch_earshot; patch_earshot.patch(sd)   # earshot 代码音效
+    patch_bgm(sd)   # 要在 earshot 之後：強制 BGM 的錨點（import hashlib, os／(g * dk)）是 earshot 補丁加進去的
 
     ref = sd / "voice/host-ref.wav"
     src = Path(a.voice_ref).expanduser()

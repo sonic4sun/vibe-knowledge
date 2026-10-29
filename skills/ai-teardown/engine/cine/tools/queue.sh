@@ -1,7 +1,7 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 # 渲染队列：逐行处理 cine/queue.txt（课号|标题|封面秒），一节一节 clips → record → finish → deliver，做完写 build/.delivered
 # Python：CINE_PY（要有 numpy scipy pillow playwright），默认 python3；端口：CINE_PORT，默认 8964（没人在听就自己起一个静态服务器）
-cd "${0:A:h}/../.."
+cd "$(dirname "$0")/../.."
 PY=${CINE_PY:-python3}; PORT=${CINE_PORT:-8964}
 $PY -c "import numpy, scipy, PIL, playwright" 2>/dev/null || { echo "$PY 缺 numpy/scipy/pillow/playwright，设 CINE_PY 指向装好的 Python"; exit 1; }
 if ! curl -sf -o /dev/null "http://127.0.0.1:$PORT/cine/index.html"; then
